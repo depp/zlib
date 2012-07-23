@@ -18,6 +18,17 @@ echo -------------------- >> configure.log
 echo $0 $* >> configure.log
 date >> configure.log
 
+# figure out the source directory
+if test -f "$0"; then
+    srcdir=`dirname "$0"`
+else
+    srcdir=.
+fi
+if test ! -f "$srcdir"/zlib.h; then
+    echo 'cannot find zlib source code' | tee -a configure.log
+    exit 1
+fi
+
 # set command prefix for cross-compilation
 if [ -n "${CHOST}" ]; then
     uname="`echo "${CHOST}" | sed -e 's/^[^-]*-\([^-]*\)$/\1/' -e 's/^[^-]*-[^-]*-\([^-]*\)$/\1/' -e 's/^[^-]*-[^-]*-\([^-]*\)-.*$/\1/'`"
@@ -28,10 +39,10 @@ fi
 STATICLIB=libz.a
 
 # extract zlib version numbers from zlib.h
-VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
-VER3=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\\.[0-9]*\).*/\1/p' < zlib.h`
-VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
-VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < zlib.h`
+VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < "$srcdir"/zlib.h`
+VER3=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\\.[0-9]*\).*/\1/p' < "$srcdir"/zlib.h`
+VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < "$srcdir"/zlib.h`
+VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < "$srcdir"/zlib.h`
 
 # establish commands for library building
 if "${CROSS_PREFIX}ar" --version >/dev/null 2>/dev/null || test $? -lt 126; then
@@ -428,7 +439,7 @@ else
 fi
 
 # copy clean zconf.h for subsequent edits
-cp -p zconf.h.in zconf.h
+cp -p "$srcdir"/zconf.h.in zconf.h
 
 echo >> configure.log
 
@@ -763,7 +774,7 @@ echo >> configure.log
 echo >> configure.log
 
 # udpate Makefile with the configure results
-sed < Makefile.in "
+sed < "$srcdir"/Makefile.in "
 /^CC *=/s#=.*#=$CC#
 /^CFLAGS *=/s#=.*#=$CFLAGS#
 /^SFLAGS *=/s#=.*#=$SFLAGS#
@@ -786,6 +797,7 @@ sed < Makefile.in "
 /^sharedlibdir *=/s#=.*#=$sharedlibdir#
 /^includedir *=/s#=.*#=$includedir#
 /^mandir *=/s#=.*#=$mandir#
+/^srcdir *=/s#=.*#=$srcdir#
 /^OBJC *=/s#=.*#= $OBJC#
 /^PIC_OBJC *=/s#=.*#= $PIC_OBJC#
 /^all: */s#:.*#: $ALL#
@@ -793,7 +805,7 @@ sed < Makefile.in "
 " > Makefile
 
 # create zlib.pc with the configure results
-sed < zlib.pc.in "
+sed < "$srcdir"/zlib.pc.in "
 /^CC *=/s#=.*#=$CC#
 /^CFLAGS *=/s#=.*#=$CFLAGS#
 /^CPP *=/s#=.*#=$CPP#
